@@ -34,14 +34,13 @@ def download_worker():
     print('download_worker enter!!!!')
     while True:
         item = _queue.get()
-        print(threading.current_thread())
-        print('get::' + item)
         if item is None:
             break
+        print('get::' + item)
         item_file = os.path.join(tmp_path, item.split('/')[-1])
         urllib.request.urlretrieve(item, item_file)
         _queue.task_done()
-    print('download_worker end!!!!')
+    print(str(threading.current_thread()) + '::download_worker end!!!!')
 
 
 def parse_mostwanted(text):
@@ -56,18 +55,20 @@ def parse_mostwanted(text):
 
 def start_download_thread():
     for i in range(num_worker_threads):
-        t = threading.Thread(target=download_worker())
+        t = threading.Thread(target=download_worker)
         t.start()
         threads.append(t)
 
 def join_down_thread():
-    for i in range(num_worker_threads):
-        _queue.put(None)
     # 等待队列结束
     _queue.join()
+    for i in range(num_worker_threads):
+        _queue.put(None)
+    print("queue join!!!")
     # 等待线程结束
     for t in threads:
         t.join()
+    print("threads join!!!")
 
 
 def get_mostwanted(mode=None, page=None):
@@ -90,7 +91,13 @@ def get_mostwanted(mode=None, page=None):
 
 
 if __name__ == '__main__':
-    get_mostwanted()
+    import sys
     start_download_thread()
+    if len(sys.argv) > 1:
+        nums = int(sys.argv[1])
+        for i in range(1,nums+1):
+            get_mostwanted(page=i)
+    else:
+        get_mostwanted()
     join_down_thread()
 
