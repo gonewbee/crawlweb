@@ -30,14 +30,14 @@ def get_jav_base_url():
 
 
 # 从队列中读取url并操作
-def downlaod_worker():
+def download_worker():
+    print('download_worker enter!!!!')
     while True:
-        if _queue.qsize() <= 0:
-            break
         item = _queue.get()
+        print(threading.current_thread())
+        print('get::' + item)
         if item is None:
             break
-        print('get::' + item)
         item_file = os.path.join(tmp_path, item.split('/')[-1])
         urllib.request.urlretrieve(item, item_file)
         _queue.task_done()
@@ -53,10 +53,16 @@ def parse_mostwanted(text):
         print(attrib)
         print('put::' + image_src)
         _queue.put(image_src)
+
+def start_download_thread():
     for i in range(num_worker_threads):
-        t = threading.Thread(target=downlaod_worker())
+        t = threading.Thread(target=download_worker())
         t.start()
         threads.append(t)
+
+def join_down_thread():
+    for i in range(num_worker_threads):
+        _queue.put(None)
     # 等待队列结束
     _queue.join()
     # 等待线程结束
@@ -64,9 +70,17 @@ def parse_mostwanted(text):
         t.join()
 
 
-def get_mostwanted():
+def get_mostwanted(mode=None, page=None):
+    params = {}
+    if mode is not None:
+        params['mode'] = mode
+    if page is not None:
+        params['page'] = page
     base_url = get_jav_base_url()
     mostwanted_url = base_url + '/vl_mostwanted.php'
+    if len(params) != 0:
+        mostwanted_url = mostwanted_url + '?' + requests.compat.urlencode(params)
+    print(mostwanted_url)
     session = requests.session()
     headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36'}
@@ -77,4 +91,6 @@ def get_mostwanted():
 
 if __name__ == '__main__':
     get_mostwanted()
+    start_download_thread()
+    join_down_thread()
 
