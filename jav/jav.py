@@ -35,6 +35,7 @@ def get_jav_base_url():
 
 base_url = get_jav_base_url()
 
+
 def get_videocomments(videocomments_url):
     comments = []
     for i in range(1, 3):
@@ -43,8 +44,11 @@ def get_videocomments(videocomments_url):
         page = etree.HTML(r.text)
         texts = page.xpath("//textarea")
         for text in texts:
-            comments.append(text.xpath("string()"))
-    print(videocomments_url + '::::' + str(comments))
+            comment = text.xpath("string()")
+            if comment.find('中文') > 0:
+                comments.append(comment)
+    if len(comments) > 0:
+        print(videocomments_url + '::::' + str(comments))
 
 
 # 从队列中读取url并操作
